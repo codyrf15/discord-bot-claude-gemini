@@ -78,7 +78,11 @@ const googleApiKeys = [
 	process.env.GOOGLE_API_KEY_3,
 	process.env.GOOGLE_API_KEY_4,
 	process.env.GOOGLE_API_KEY_5,
-];
+].filter(key => key && key.trim() !== ''); // Filter out undefined/empty keys
+
+if (googleApiKeys.length === 0) {
+	console.error('No valid Google API keys found! Please check your environment variables.');
+}
 
 const genAIInstances = googleApiKeys.map((apiKey) => new GoogleGenerativeAI(apiKey));
 
@@ -199,8 +203,14 @@ async function processConversation({ message, messageContent }) {
 			});
 		} else if (modelName === process.env.GOOGLE_MODEL_NAME) {
 			// Use Google Generative AI
-			const genAIIndex = message.id % genAIInstances.length;
+			if (genAIInstances.length === 0) {
+				throw new Error('No valid Google API keys available');
+			}
+			
+			const genAIIndex = Math.abs(parseInt(message.id.slice(-8), 16)) % genAIInstances.length;
 			const genAI = genAIInstances[genAIIndex];
+			console.log(`Using Google API key index: ${genAIIndex + 1}/${genAIInstances.length}`);
+			
 			const model = await googleLimiter.schedule(() => genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' }));
 			const chat = model.startChat({
 				history: conversationManager.getGoogleHistory(message.author.id),
