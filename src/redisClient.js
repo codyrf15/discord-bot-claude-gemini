@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Redis } = require('@upstash/redis');
 const redisClient = new Redis({
 	url: process.env.UPSTASH_REDIS_URL,
