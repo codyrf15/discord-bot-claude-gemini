@@ -1,19 +1,6 @@
 const { config } = require('./config');
-const redisClient = require('./redisClient');
 const fetch = require('node-fetch');
 const pdfParse = require('pdf-parse');
-
-let allowedChannelIds = [];
-
-async function fetchAllowedChannelIds() {
-	try {
-		const channelIds = await redisClient.smembers('allowedChannelIds');
-		allowedChannelIds = channelIds;
-		console.log('Fetched allowed channel IDs:', allowedChannelIds);
-	} catch (error) {
-		console.error('Error fetching allowed channel IDs:', error);
-	}
-}
 
 async function processAttachment(attachment) {
 	const attachmentExtension = attachment.name.split('.').pop().toLowerCase();
@@ -60,10 +47,22 @@ async function processAttachment(attachment) {
 
 async function onMessageCreate(message, conversationQueue, errorHandler, conversationManager) {
 	try {
+		// Ignore messages from bots
 		if (message.author.bot) return;
 
-		const isAllowedChannel = allowedChannelIds.includes(message.channel.id);
-		if (isAllowedChannel) {
+		// Check if we should process this message
+		let shouldProcess = false;
+
+		// Process DMs directly
+		if (message.channel.type === 1) {
+			shouldProcess = true;
+		}
+		// For guild channels, only process if bot is mentioned
+		else if (message.mentions.users.has(message.client.user.id)) {
+			shouldProcess = true;
+		}
+
+		if (shouldProcess) {
 			let messageContent = message.content.trim();
 
 			if (message.attachments.size > 0) {
@@ -101,11 +100,5 @@ async function onMessageCreate(message, conversationQueue, errorHandler, convers
 		await errorHandler.handleError(error, message);
 	}
 }
-
-// Fetch allowed channel IDs when the module is loaded
-fetchAllowedChannelIds();
-
-// Refresh allowed channel IDs every 5 minutes
-setInterval(fetchAllowedChannelIds, 5 * 60 * 1000);
 
 module.exports = { onMessageCreate };
