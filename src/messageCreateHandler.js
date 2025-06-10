@@ -57,9 +57,14 @@ async function onMessageCreate(message, conversationQueue, errorHandler, convers
 		if (message.channel.type === 1) {
 			shouldProcess = true;
 		}
-		// For guild channels, only process if bot is mentioned
+		// For guild channels, check if bot is mentioned AND channel is allowed
 		else if (message.mentions.users.has(message.client.user.id)) {
-			shouldProcess = true;
+			// Check if channel is in allowed channels list
+			const redisClient = require('./redisClient');
+			const isChannelAllowed = await redisClient.sismember('allowedChannelIds', message.channel.id);
+			if (isChannelAllowed) {
+				shouldProcess = true;
+			}
 		}
 
 		if (shouldProcess) {
