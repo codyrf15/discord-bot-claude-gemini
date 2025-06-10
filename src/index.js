@@ -20,7 +20,7 @@ const redisClient = require('./redisClient');
 // Initialize Express app
 const app = express();
 app.set('trust proxy', 1);
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 5000;
 app.use(express.json());
 
 const API_KEY = process.env.API_KEY;
