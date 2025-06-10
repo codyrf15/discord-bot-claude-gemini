@@ -12,9 +12,6 @@ async function fetchAllowedChannelIds() {
 		console.log('Fetched allowed channel IDs:', allowedChannelIds);
 	} catch (error) {
 		console.error('Error fetching allowed channel IDs:', error);
-		// Fallback: allow bot to respond in any channel when Redis fails
-		console.log('Redis failed - bot will respond in all channels as fallback');
-		allowedChannelIds = ['fallback_mode'];
 	}
 }
 
@@ -65,7 +62,7 @@ async function onMessageCreate(message, conversationQueue, errorHandler, convers
 	try {
 		if (message.author.bot) return;
 
-		const isAllowedChannel = allowedChannelIds.includes(message.channel.id) || allowedChannelIds.includes('fallback_mode');
+		const isAllowedChannel = allowedChannelIds.includes(message.channel.id);
 		if (isAllowedChannel) {
 			let messageContent = message.content.trim();
 
