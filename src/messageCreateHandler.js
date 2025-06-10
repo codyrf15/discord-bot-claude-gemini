@@ -50,10 +50,9 @@ async function onMessageCreate(message, conversationQueue, errorHandler, convers
 		// Ignore messages from bots
 		if (message.author.bot) return;
 
-		// Check if we should process this message
 		let shouldProcess = false;
 
-		// Process DMs directly
+		// For DMs, always process (no channel restrictions)
 		if (message.channel.type === 1) {
 			shouldProcess = true;
 		}
@@ -68,6 +67,7 @@ async function onMessageCreate(message, conversationQueue, errorHandler, convers
 		}
 
 		if (shouldProcess) {
+			// Handle file attachments
 			let messageContent = message.content.trim();
 
 			if (message.attachments.size > 0) {
@@ -95,10 +95,12 @@ async function onMessageCreate(message, conversationQueue, errorHandler, convers
 				return;
 			}
 
-			if (conversationManager.isNewConversation(message.author.id)) {
+			// Privacy notice for first-time users in public channels (not DMs)
+			if (message.channel.type !== 1 && conversationManager.isNewConversation(message.author.id)) {
 				await message.channel.send({ content: config.messages.privacyNotice });
 			}
 
+			// Queue the message for processing
 			conversationQueue.push({ message, messageContent });
 		}
 	} catch (error) {
