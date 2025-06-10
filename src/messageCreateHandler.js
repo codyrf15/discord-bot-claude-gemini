@@ -47,28 +47,34 @@ async function processAttachment(attachment) {
 
 async function onMessageCreate(message, conversationQueue, errorHandler, conversationManager) {
 	try {
+		console.log(`[RECEIVED MESSAGE] Author: ${message.author.username}, Channel Type: ${message.channel.type}, Content: "${message.content}"`);
+		
 		// Ignore messages from bots
 		if (message.author.bot) return;
 
 		let shouldProcess = false;
 
-		// For DMs, always process (no channel restrictions)
+		// For DMs, always process
 		if (message.channel.type === 1) {
 			shouldProcess = true;
 		}
-		// For guild channels, check if bot is mentioned AND channel is allowed
-		else if (message.mentions.users.has(message.client.user.id)) {
-			// Check if channel is in allowed channels list
-			const redisClient = require('./redisClient');
-			const isChannelAllowed = await redisClient.sismember('allowedChannelIds', message.channel.id);
-			if (isChannelAllowed) {
+		// For guild channels, only process if bot is mentioned
+		else if (message.channel.type !== 1) {
+			if (message.mentions.users.has(message.client.user.id)) {
 				shouldProcess = true;
+			} else {
+				return;
 			}
 		}
 
 		if (shouldProcess) {
 			// Handle file attachments
 			let messageContent = message.content.trim();
+			
+			// Strip bot mention from message content for guild channels
+			if (message.channel.type !== 1 && message.mentions.users.has(message.client.user.id)) {
+				messageContent = messageContent.replace(/<@!?\d+>/g, '').trim();
+			}
 
 			if (message.attachments.size > 0) {
 				const attachmentProcessingPromises = message.attachments.map(async (attachment) => {
